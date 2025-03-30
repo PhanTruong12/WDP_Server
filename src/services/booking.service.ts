@@ -6,7 +6,7 @@ import {
   ChangeBookingStatusDTO,
   CreateUpdateBookingDTO
 } from "../dtos/booking.dto"
-import { ErrorMessage, Roles, SuccessMessage } from "../utils/constant"
+import { BOOKING_STATUS, ERROR_MESSAGE, Roles, SUCCESS_MESSAGE } from "../utils/constant"
 import User from "../models/user"
 import mongoose from "mongoose"
 import sendEmail from "../utils/send-mail"
@@ -40,7 +40,7 @@ const fncCreateBooking = async (req: Request) => {
                 </html>
                 `
     const checkSendMail = await sendEmail(BarberEmail, subject, content)
-    if (!checkSendMail) return response({}, true, ErrorMessage.SEND_MAIL_ERROR, 200)
+    if (!checkSendMail) return response({}, true, ERROR_MESSAGE.SEND_MAIL_ERROR, 200)
     await Booking.create({
       ...req.body,
       Barber: BarberID,
@@ -147,15 +147,16 @@ const fncGetListMyBooking = async (req: Request) => {
           BookingStatus: 1,
           Services: 1,
           CustomerAddress: 1,
-          CustomerPhone: 1
+          CustomerPhone: 1,
+          createdAt: 1
         }
       }
     ])
     const data = bookings.map((i: any) => ({
       ...i,
-      IsBookAgain: RoleID === Roles.ROLE_USER && i.BookingStatus === 3 ? true : false
+      IsBookAgain: RoleID === Roles.ROLE_USER && i.BookingStatus === BOOKING_STATUS.HUY_XAC_NHAN ? true : false
     }))
-    return response(data, false, SuccessMessage.GET_DATA_SUCCESS, 200)
+    return response(data, false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }
@@ -163,15 +164,15 @@ const fncGetListMyBooking = async (req: Request) => {
 
 const fncChangeBookingStatus = async (req: Request) => {
   try {
-    const { BookingID, BookingStatus, CustomerEmail, CustomerName, BarberEmail, BarberName } = req.body as ChangeBookingStatusDTO
+    const { BookingID, BookingStatus, CustomerEmail, CustomerName, BarberEmail, BarberName, Reason } = req.body as ChangeBookingStatusDTO
     const { RoleID } = req.user
     const booking = await getOneDocument(Booking, "_id", BookingID)
-    if (!booking) return response({}, true, ErrorMessage.BOOKING_NOT_EXIST, 200)
+    if (!booking) return response({}, true, ERROR_MESSAGE.BOOKING_NOT_EXIST, 200)
     let subject = "THÔNG BÁO TRẠNG THÁI BOOKING", confirmContent, rejectContent, content = "", checkSendMail
-    if ([2, 3].includes(BookingStatus)) {
+    if ([BOOKING_STATUS.DA_XAC_NHAN, BOOKING_STATUS.HUY_XAC_NHAN].includes(BookingStatus)) {
       if (RoleID === Roles.ROLE_BARBER) {
         confirmContent = `Barber ${BarberName} đã xác nhận booking của bạn. Bạn hãy truy cập vào lịch sử booking của mình để tiến hành thanh toán và hoàn tất booking.`
-        rejectContent = `Barber ${BarberName} đã hủy xác nhận booking của bạn.`
+        rejectContent = `Barber ${BarberName} đã hủy xác nhận booking của bạn với lý do: ${Reason}`
         content = `
         <html>
         <head>
@@ -184,8 +185,8 @@ const fncChangeBookingStatus = async (req: Request) => {
         <body>
           <p style="margin-top: 30px; margin-bottom:30px; text-align:center; font-weigth: 700; font-size: 20px">${subject}</p>
           <p style="margin-bottom:10px">Xin chào ${CustomerName},</p>
-          <p style="margin-bottom:10px">${BookingStatus === 2 ? confirmContent : rejectContent}</p>
-          ${BookingStatus === 2 ?
+          <p style="margin-bottom:10px">${BookingStatus === BOOKING_STATUS.DA_XAC_NHAN ? confirmContent : rejectContent}</p>
+          ${BookingStatus === BOOKING_STATUS.DA_XAC_NHAN ?
             `<div>
             <span style="color:red; margin-right: 4px">Lưu ý:</span>
             <span>Trong vòng 48h nếu bạn không thanh toán booking này thì booking này sẽ tự động chuyển thành "Hủy xác nhận".</span>
@@ -197,7 +198,7 @@ const fncChangeBookingStatus = async (req: Request) => {
         `
         checkSendMail = await sendEmail(CustomerEmail as string, subject, content)
       } else {
-        rejectContent = `Khách hàng ${CustomerName} đã hủy booking.`
+        rejectContent = `Khách hàng ${CustomerName} đã hủy booking với lý do: ${Reason}`
         content = `
         <html>
         <head>
@@ -216,7 +217,7 @@ const fncChangeBookingStatus = async (req: Request) => {
         `
         checkSendMail = await sendEmail(BarberEmail as string, subject, content)
       }
-      if (!checkSendMail) return response({}, true, ErrorMessage.SEND_MAIL_ERROR, 200)
+      if (!checkSendMail) return response({}, true, ERROR_MESSAGE.SEND_MAIL_ERROR, 200)
     }
     const updateBooking = await Booking
       .findOneAndUpdate(
@@ -227,7 +228,7 @@ const fncChangeBookingStatus = async (req: Request) => {
       .populate("Customer", ["_id", "FullName", "AvatarPath"])
       .populate("Barber", ["_id", "FullName", "AvatarPath"])
       .lean()
-    if (!updateBooking) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!updateBooking) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     const data = {
       ...updateBooking,
       Customer: {
@@ -238,7 +239,7 @@ const fncChangeBookingStatus = async (req: Request) => {
         ...updateBooking.Barber,
         Email: BarberEmail
       },
-      IsBookAgain: RoleID === Roles.ROLE_BARBER && updateBooking.BookingStatus === 3 ? true : false,
+      IsBookAgain: RoleID === Roles.ROLE_BARBER && updateBooking.BookingStatus === BOOKING_STATUS.HUY_XAC_NHAN ? true : false,
       ButtonShow: {
         IsUpdate: RoleID === Roles.ROLE_USER ? false : true,
         IsConfirm: RoleID === Roles.ROLE_BARBER ? false : true,
@@ -248,24 +249,23 @@ const fncChangeBookingStatus = async (req: Request) => {
         IsFeedback: RoleID === Roles.ROLE_BARBER ? true : false,
       },
       ButtonDisabled: {
-        IsUpdate: updateBooking.BookingStatus === 1 ? false : true,
-        IsConfirm: updateBooking.BookingStatus === 1 ? false : true,
-        IsReject: updateBooking.BookingStatus === 1 ? false : true,
-        IsPayment: updateBooking.BookingStatus === 2 && !updateBooking.IsPaid
+        IsUpdate: updateBooking.BookingStatus === BOOKING_STATUS.CHO_XAC_NHAN ? false : true,
+        IsConfirm: updateBooking.BookingStatus === BOOKING_STATUS.CHO_XAC_NHAN ? false : true,
+        IsReject: updateBooking.BookingStatus === BOOKING_STATUS.CHO_XAC_NHAN ? false : true,
+        IsPayment: updateBooking.BookingStatus === BOOKING_STATUS.DA_XAC_NHAN && !updateBooking.IsPaid
           ? false
           : true,
-        IsComplete: updateBooking.BookingStatus === 4 && !!updateBooking.IsPaid && moment().isAfter(updateBooking.DateAt)
-          ? true
-          : false,
-        IsFeedback: updateBooking.BookingStatus === 5 ? false : true
+        IsComplete: updateBooking.BookingStatus === BOOKING_STATUS.CHO_THUC_HIEN &&
+          !!updateBooking.IsPaid && moment().isAfter(updateBooking.DateAt) ? true : false,
+        IsFeedback: updateBooking.BookingStatus === BOOKING_STATUS.DA_HOAN_THANH ? false : true
       }
     }
     return response(
       data,
       false,
-      BookingStatus === 2
+      BookingStatus === BOOKING_STATUS.DA_XAC_NHAN
         ? "Xác nhận thành công"
-        : BookingStatus === 3
+        : BookingStatus === BOOKING_STATUS.HUY_XAC_NHAN
           ? "Hủy thành công"
           : "Hoàn thành booking"
       ,
@@ -283,7 +283,7 @@ const fncChangeBookingPaidStatus = async (req: Request) => {
     const { ID } = req.user
     const { BookingID, BarberName, BarberEmail, CustomerName } = req.body as ChangeBookingPaidStatusDTO
     const booking = await getOneDocument(Booking, "_id", BookingID)
-    if (!booking) return response({}, true, ErrorMessage.BOOKING_NOT_EXIST, 200)
+    if (!booking) return response({}, true, ERROR_MESSAGE.BOOKING_NOT_EXIST, 200)
     const subject = "THÔNG BÁO KHÁCH HÀNG BOOKING"
     const content = `
                 <html>
@@ -305,18 +305,18 @@ const fncChangeBookingPaidStatus = async (req: Request) => {
                 </html>
                 `
     const checkSendMail = await sendEmail(BarberEmail, subject, content)
-    if (!checkSendMail) return response({}, true, ErrorMessage.SEND_MAIL_ERROR, 200)
+    if (!checkSendMail) return response({}, true, ERROR_MESSAGE.SEND_MAIL_ERROR, 200)
     const updateBooking = await Booking.findOneAndUpdate(
       { _id: BookingID },
       {
         IsPaid: true,
-        BookingStatus: 4
+        BookingStatus: BOOKING_STATUS.CHO_THUC_HIEN
       },
       { session: session }
     )
     if (!updateBooking) {
       await session.abortTransaction()
-      return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+      return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     }
     await Payment.create(
       [{
@@ -415,7 +415,7 @@ const fncGetDetailBooking = async (req: Request) => {
       },
       { $unwind: "$Barber" }
     ])
-    if (!booking[0]) return response({}, true, ErrorMessage.BOOKING_NOT_EXIST, 200)
+    if (!booking[0]) return response({}, true, ERROR_MESSAGE.BOOKING_NOT_EXIST, 200)
     const data = {
       ...booking[0],
       Barber: {
@@ -431,17 +431,16 @@ const fncGetDetailBooking = async (req: Request) => {
         IsFeedback: RoleID === Roles.ROLE_USER ? true : false,
       },
       ButtonDisabled: {
-        IsUpdate: booking[0].BookingStatus === 1 ? false : true,
-        IsConfirm: booking[0].BookingStatus === 1 ? false : true,
-        IsReject: booking[0].BookingStatus === 1 ? false : true,
-        IsPayment: booking[0].BookingStatus === 2 && !booking[0].IsPaid ? false : true,
-        IsComplete: booking[0].BookingStatus === 4 && !!booking[0].IsPaid && !!moment().isAfter(booking[0].DateAt)
-          ? false
-          : true,
-        IsFeedback: booking[0].BookingStatus === 5 ? false : true
+        IsUpdate: booking[0].BookingStatus === BOOKING_STATUS.CHO_XAC_NHAN ? false : true,
+        IsConfirm: booking[0].BookingStatus === BOOKING_STATUS.CHO_XAC_NHAN ? false : true,
+        IsReject: booking[0].BookingStatus === BOOKING_STATUS.CHO_XAC_NHAN ? false : true,
+        IsPayment: booking[0].BookingStatus === BOOKING_STATUS.DA_XAC_NHAN && !booking[0].IsPaid ? false : true,
+        IsComplete: booking[0].BookingStatus === BOOKING_STATUS.CHO_THUC_HIEN &&
+          !!booking[0].IsPaid && !!moment().isAfter(booking[0].DateAt) ? false : true,
+        IsFeedback: booking[0].BookingStatus === BOOKING_STATUS.DA_HOAN_THANH ? false : true
       }
     }
-    return response(data, false, SuccessMessage.GET_DATA_SUCCESS, 200)
+    return response(data, false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }
@@ -473,7 +472,7 @@ const fncUpdateBooking = async (req: Request) => {
                 </html>
                 `
     const checkSendMail = await sendEmail(BarberEmail, subject, content)
-    if (!checkSendMail) return response({}, true, ErrorMessage.SEND_MAIL_ERROR, 200)
+    if (!checkSendMail) return response({}, true, ERROR_MESSAGE.SEND_MAIL_ERROR, 200)
     const updateBooking = await Booking.findOneAndUpdate(
       {
         _id: BookingID,
@@ -481,7 +480,7 @@ const fncUpdateBooking = async (req: Request) => {
       },
       { ...req.body }
     )
-    if (!updateBooking) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!updateBooking) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response({}, false, "Chỉnh sửa booking thành công", 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
@@ -495,7 +494,7 @@ const fncGetBookingScheduleOfBarber = async (req: Request) => {
     const bookings = await Booking
       .find({
         Barber: BarberID,
-        BookingStatus: 4
+        BookingStatus: BOOKING_STATUS.CHO_THUC_HIEN
       })
       .select("Services DateAt")
     if (!!bookings.length) {
@@ -507,7 +506,7 @@ const fncGetBookingScheduleOfBarber = async (req: Request) => {
         })
       })
     }
-    return response(bookingSchedules, false, SuccessMessage.GET_DATA_SUCCESS, 200)
+    return response(bookingSchedules, false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }

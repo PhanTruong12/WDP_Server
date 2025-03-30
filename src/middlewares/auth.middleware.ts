@@ -12,7 +12,7 @@ const authMiddleware = (Roles: any) => {
     const token = req.cookies.token
     jwt.verify(token, process.env.ACCESS_TOKEN || "access_token", (err: any, decode: any) => {
       if (err) {
-        return res.status(401).json(
+        res.status(401).json(
           response({}, true, err.toString(), 401)
         )
       }
@@ -21,7 +21,7 @@ const authMiddleware = (Roles: any) => {
         req.user = payload
         next()
       } else {
-        return res.status(403).json(
+        res.status(403).json(
           response({}, true, 'Bạn không có quyền', 403)
         )
       }
