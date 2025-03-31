@@ -76,6 +76,36 @@ const fncGetListTab = async (req: Request) => {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const fncGetProfitPercent = async () => {
   try {
     const percent = await getOneDocument(ProfitPercent, "_id", ProfitPercentID)
