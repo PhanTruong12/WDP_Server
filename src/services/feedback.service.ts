@@ -5,7 +5,7 @@ import {
 } from "../dtos/feedback.dto"
 import Feedback from "../models/feedback"
 import User from "../models/user"
-import { ErrorMessage } from "../utils/constant"
+import { ERROR_MESSAGE } from "../utils/constant"
 import response from "../utils/response"
 import { Request } from "express"
 
@@ -61,7 +61,7 @@ const fncDeleteFeedback = async (req: Request) => {
       { IsDeleted: true },
       { new: true }
     )
-    if (!deleteFeedback) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!deleteFeedback) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response(deleteFeedback, false, "Xóa Messenger thành công", 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)

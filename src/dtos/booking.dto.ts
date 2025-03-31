@@ -24,7 +24,8 @@ export interface ChangeBookingStatusDTO {
   CustomerName: string,
   CustomerEmail: string,
   BarberName: string,
-  BarberEmail: string
+  BarberEmail: string,
+  Reason: string
 }
 
 export interface ChangeBookingPaidStatusDTO {

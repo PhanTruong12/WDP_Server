@@ -1,5 +1,5 @@
 import { Request } from "express"
-import { ErrorMessage, Roles, SuccessMessage } from "../utils/constant"
+import { BOOKING_STATUS, ERROR_MESSAGE, REGISTER_STATUS, Roles, SUCCESS_MESSAGE } from "../utils/constant"
 import User from "../models/user"
 import response from "../utils/response"
 import {
@@ -45,8 +45,8 @@ const fncGetDetailProfile = async (req: Request) => {
         }
       }
     ])
-    if (!user[0]) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
-    return response(user[0], false, SuccessMessage.GET_DATA_SUCCESS, 200)
+    if (!user[0]) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
+    return response(user[0], false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }
@@ -65,7 +65,7 @@ const fncChangeProfile = async (req: Request) => {
         { new: true }
       )
       .lean()
-    if (!user) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!user) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response(user, false, "Bạn đã cập nhật thông tin thành công", 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
@@ -121,13 +121,13 @@ const fncGetListUser = async (req: Request) => {
     const result = await Promise.all([users, total])
     const data = result[0].map((i: any) => ({
       ...i,
-      IsConfirm: i.RegisterStatus === 2 || !i.IsActive ? false : true,
-      IsReject: i.RegisterStatus === 2 || !i.IsActive ? false : true,
+      IsConfirm: i.RegisterStatus === REGISTER_STATUS.YEU_CAU_DUYET || !i.IsActive ? false : true,
+      IsReject: i.RegisterStatus === REGISTER_STATUS.YEU_CAU_DUYET || !i.IsActive ? false : true,
     }))
     return response(
       { List: data, Total: result[1] },
       false,
-      SuccessMessage.GET_DATA_SUCCESS,
+      SUCCESS_MESSAGE.GET_DATA_SUCCESS,
       200
     )
   } catch (error: any) {
@@ -138,8 +138,12 @@ const fncGetListUser = async (req: Request) => {
 const fncRequestConfirmRegister = async (req: Request) => {
   try {
     const UserID = req.user.ID
-    const user = await User.findOneAndUpdate({ _id: UserID }, { RegisterStatus: 2 }, { new: true })
-    if (!user) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    const user = await User.findOneAndUpdate(
+      { _id: UserID },
+      { RegisterStatus: REGISTER_STATUS.YEU_CAU_DUYET },
+      { new: true }
+    )
+    if (!user) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response(user, false, "Yêu cầu của bạn đã được gửi. Hệ thống sẽ phản hồi yêu cầu của bạn trong 48h!", 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
@@ -153,7 +157,7 @@ const fncResponseRequestRegister = async (req: Request) => {
       { _id: UserID },
       { RegisterStatus }
     )
-    if (!updateUser) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!updateUser) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response({}, false, "Duyệt tài khoản thành công", 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
@@ -171,7 +175,7 @@ const fncUpdateSchedule = async (req: Request) => {
         { new: true }
       )
       .lean()
-    if (!updateUser) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!updateUser) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response(updateUser, false, "Chỉnh sửa lịch thành công", 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
@@ -189,7 +193,7 @@ const fncUpdateService = async (req: Request) => {
         { new: true }
       )
       .lean()
-    if (!updateUser) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!updateUser) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response(updateUser, false, "Chỉnh sửa dịch vụ thành công", 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
@@ -198,16 +202,14 @@ const fncUpdateService = async (req: Request) => {
 
 const fncGetListBarber = async (req: Request) => {
   try {
-    const { TextSearch, PageSize, CurrentPage, SortByStar } = req.body as GetListBarberDTO
+    const { TextSearch, PageSize, CurrentPage, SortByStar, AddressSearch } = req.body as GetListBarberDTO
     const barbers = await User.aggregate([
       {
         $match: {
           RoleID: Roles.ROLE_BARBER,
-          RegisterStatus: 3,
-          $or: [
-            { FullName: { $regex: TextSearch, $options: "i" } },
-            { Address: { $regex: TextSearch, $options: "i" } },
-          ]
+          RegisterStatus: REGISTER_STATUS.DA_DUYET,
+          FullName: { $regex: TextSearch, $options: "i" },
+          Address: { $regex: AddressSearch, $options: "i" }
         }
       },
       {
@@ -246,7 +248,7 @@ const fncGetListBarber = async (req: Request) => {
       { $skip: (CurrentPage - 1) * PageSize },
       { $limit: PageSize },
     ])
-    return response(barbers, false, SuccessMessage.GET_DATA_SUCCESS, 200)
+    return response(barbers, false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }
@@ -262,7 +264,7 @@ export const fncGetDetailBarber = async (req: Request) => {
     const bookings = await Booking
       .find({
         Barber: BarberID,
-        BookingStatus: 4
+        BookingStatus: BOOKING_STATUS.CHO_THUC_HIEN
       })
       .select("Services DateAt")
     if (!!bookings.length) {
@@ -311,14 +313,14 @@ export const fncGetDetailBarber = async (req: Request) => {
         }
       },
     ])
-    if (!barber[0]) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!barber[0]) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response(
       {
         ...barber[0],
         BookingSchedules: bookingSchedules
       },
       false,
-      SuccessMessage.GET_DATA_SUCCESS,
+      SUCCESS_MESSAGE.GET_DATA_SUCCESS,
       200
     )
   } catch (error: any) {
@@ -332,7 +334,7 @@ const fncGetListTopBarber = async () => {
       {
         $match: {
           RoleID: Roles.ROLE_BARBER,
-          RegisterStatus: 3
+          RegisterStatus: REGISTER_STATUS.DA_DUYET
         }
       },
       {
@@ -347,11 +349,9 @@ const fncGetListTopBarber = async () => {
       {
         $sort: { TotalStars: -1 }
       },
-      {
-        $limit: 3
-      }
+      { $limit: 3 }
     ])
-    return response(barbers, false, SuccessMessage.GET_DATA_SUCCESS, 200)
+    return response(barbers, false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }
@@ -365,7 +365,7 @@ const fncInactiveOrActiveAccount = async (req: Request) => {
       { IsActive: IsActive },
       { new: true }
     )
-    if (!updateAccount) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!updateAccount) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response(
       {},
       false,
@@ -390,7 +390,7 @@ const fncUpdateResult = async (req: Request) => {
         { new: true }
       )
       .lean()
-    if (!updateUser) return response({}, true, ErrorMessage.HAVE_AN_ERROR, 200)
+    if (!updateUser) return response({}, true, ERROR_MESSAGE.HAVE_AN_ERROR, 200)
     return response(updateUser, false, "Chỉnh sửa thành công", 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)

@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import { REGISTER_STATUS } from "../utils/constant"
 const Schema = mongoose.Schema
 
 const UserSchema = new Schema({
@@ -44,7 +45,7 @@ const UserSchema = new Schema({
   },
   RegisterStatus: {
     type: Number,
-    default: 1
+    default: REGISTER_STATUS.MOI_TAO
   },
   Services: {
     type: [
