@@ -1,7 +1,7 @@
 import { Request } from "express"
 import response from "../utils/response"
 import { getOneDocument } from "../utils/queryFunction"
-import { Roles, SuccessMessage } from "../utils/constant"
+import { Roles, SUCCESS_MESSAGE } from "../utils/constant"
 import SystemKey from "../models/systemkey"
 import {
   CreateSystemKeyDTO,
@@ -14,7 +14,7 @@ const ProfitPercentID = "67c842e8d34722ce27a4681f"
 const getTabs = (RoleID: number) => {
   let tabs = [] as any[]
   if (RoleID === Roles.ROLE_ADMIN) {
-    tabs = [1, 2, 3, 4]
+    tabs = [1, 2, 3, 4, 5]
   } else if (RoleID === Roles.ROLE_BARBER) {
     tabs = [1, 2, 3, 4, 5, 7]
   } else if (RoleID === Roles.ROLE_USER) {
@@ -70,7 +70,7 @@ const fncGetListTab = async (req: Request) => {
   try {
     const { RoleID } = req.user
     const tabs = getTabs(RoleID)
-    return response(tabs, false, SuccessMessage.GET_DATA_SUCCESS, 200)
+    return response(tabs, false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }
@@ -109,7 +109,7 @@ const fncGetListTab = async (req: Request) => {
 const fncGetProfitPercent = async () => {
   try {
     const percent = await getOneDocument(ProfitPercent, "_id", ProfitPercentID)
-    return response(percent, false, SuccessMessage.GET_DATA_SUCCESS, 200)
+    return response(percent, false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 200)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }

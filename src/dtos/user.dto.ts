@@ -41,7 +41,8 @@ export interface UpdateServiceDTO {
 }
 
 export interface GetListBarberDTO extends CommonDTO {
-  SortByStar: 1 | -1
+  SortByStar: 1 | -1,
+  AddressSearch: string
 }
 
 export interface InactiveOrActiveAccountDTO {

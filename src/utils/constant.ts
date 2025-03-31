@@ -5,7 +5,7 @@ export const Roles = {
   ROLE_USER: 3,
 }
 
-export const ErrorMessage = {
+export const ERROR_MESSAGE = {
   EMAIL_NOT_EXIST: "Email không tồn tại",
   EMAIL_EXIST: "Email đã tồn tại",
   SEND_MAIL_ERROR: "Có lỗi xảy ra trong quá trình gửi mail",
@@ -16,8 +16,24 @@ export const ErrorMessage = {
   BOOKING_NOT_EXIST: "Booking không tồn tại"
 }
 
-export const SuccessMessage = {
+export const SUCCESS_MESSAGE = {
   GET_DATA_SUCCESS: "Lấy data thành công",
+}
+
+// SYSTEM_KEY
+export const REGISTER_STATUS = {
+  MOI_TAO: 1,
+  YEU_CAU_DUYET: 2,
+  DA_DUYET: 3,
+  KHONG_DUYET: 4
+}
+
+export const BOOKING_STATUS = {
+  CHO_XAC_NHAN: 1,
+  DA_XAC_NHAN: 2,
+  HUY_XAC_NHAN: 3,
+  CHO_THUC_HIEN: 4,
+  DA_HOAN_THANH: 5
 }
 
 // ------------------------------------

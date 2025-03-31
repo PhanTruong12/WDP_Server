@@ -8,14 +8,3 @@ export interface RegisterDTO {
 export interface LoginDTO {
   Email: string,
 }
-
-export interface ChangePasswordDTO {
-  OldPassword: string,
-  NewPassword: string
-}
-
-export interface ForgotPasswordDTO {
-  Email: string,
-  Step: number,
-  Password: string
-}

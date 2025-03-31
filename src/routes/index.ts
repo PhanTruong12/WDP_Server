@@ -6,6 +6,7 @@ import FileRoute from "./file.route"
 import BookingRoute from "./booking.route"
 import PaymentRoute from "./payment.route"
 import FeedbackRoute from "./feedback.route"
+import StatisticRoute from "./statistic.route"
 
 const routes = (app: Application) => {
   app.use("/account", AccountRoute)
@@ -15,6 +16,7 @@ const routes = (app: Application) => {
   app.use("/booking", BookingRoute)
   app.use("/payment", PaymentRoute)
   app.use("/feedback", FeedbackRoute)
+  app.use("/statistic", StatisticRoute)
 }
 
 export default routes

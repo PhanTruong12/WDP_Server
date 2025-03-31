@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import { BOOKING_STATUS } from "../utils/constant"
 const Schema = mongoose.Schema
 
 const BookingSchema = new Schema({
@@ -57,7 +58,7 @@ const BookingSchema = new Schema({
   },
   BookingStatus: {
     type: Number,
-    default: 1
+    default: BOOKING_STATUS.CHO_XAC_NHAN
   },
   DateAt: {
     type: Date,

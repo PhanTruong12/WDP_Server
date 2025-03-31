@@ -3,7 +3,7 @@ import response from "../utils/response"
 import Payment from "../models/payment"
 import { CreatePaymentDTO } from "../dtos/payment.dto"
 import User from "../models/user"
-import { SuccessMessage } from "../utils/constant"
+import { SUCCESS_MESSAGE } from "../utils/constant"
 
 const fncCreatePayment = async (req: Request) => {
   try {
@@ -23,7 +23,7 @@ const fncGetListPayment = async () => {
     const payments = await Payment
       .find()
       .populate("Customer", ["_id", "FullName"])
-    return response(payments, false, SuccessMessage.GET_DATA_SUCCESS, 201)
+    return response(payments, false, SUCCESS_MESSAGE.GET_DATA_SUCCESS, 201)
   } catch (error: any) {
     return response({}, true, error.toString(), 500)
   }
